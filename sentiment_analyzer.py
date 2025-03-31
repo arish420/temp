@@ -1,3 +1,4 @@
+import transformers
 from transformers import pipeline
 import torch
 import streamlit as st
