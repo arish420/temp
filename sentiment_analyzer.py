@@ -2,6 +2,8 @@ import transformers
 from transformers import pipeline
 import torch
 import streamlit as st
+# Load model directly
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
 st.title("Sentiment Analyzer")
