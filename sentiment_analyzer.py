@@ -48,6 +48,8 @@ def predict_with_custom_thresholds(text, thresholds):
     else:
         flat_output = output
 
+    st.write(flat_output)
+
     # Apply custom thresholds: only keep labels where score meets/exceeds the threshold.
     final_labels = [entry['label'] for entry in flat_output if entry['score'] >= thresholds[entry['label']]]
     return  final_labels,flat_output
