@@ -2,6 +2,9 @@ from transformers import pipeline
 import torch
 import streamlit as st
 
+
+st.title("Sentiment Analyzer")
+
 # Define your label names (in the correct order)
 label_names = ["neutral", "positive", "mixed", "sarcastic", "negative", "ironic"]
 
@@ -15,6 +18,9 @@ custom_thresholds = {
     'ironic': 0.16
 }
 
+tokenizer = AutoTokenizer.from_pretrained("OmarBrookes/my-sentiment-analysis")
+model = AutoModelForSequenceClassification.from_pretrained("OmarBrookes/my-sentiment-analysis")
+
 # Update your model config so that labels are human-readable.
 model.config.id2label = {i: label for i, label in enumerate(label_names)}
 model.config.label2id = {label: i for i, label in enumerate(label_names)}
@@ -22,7 +28,7 @@ model.config.label2id = {label: i for i, label in enumerate(label_names)}
 # Create the pipeline. Using "sigmoid" with top_k=None returns probabilities for all labels.
 pipe = pipeline(
     task="text-classification",
-    model=model,
+    model="OmarBrookes/my-sentiment-analysis",
     tokenizer=tokenizer,
     function_to_apply="sigmoid",  # For multi-label, use sigmoid activation
     top_k=None,                   # Return scores for all labels
@@ -43,19 +49,31 @@ def predict_with_custom_thresholds(text, thresholds):
     final_labels = [entry['label'] for entry in flat_output if entry['score'] >= thresholds[entry['label']]]
     return final_labels, flat_output
 
-# Interactive loop for predictions
-def interactive_prediction():
-    while True:
-        text = input("Enter your text for sentiment analysis: ")
-        final_labels, raw_output = predict_with_custom_thresholds(text, custom_thresholds)
-        print("\nRaw Prediction Scores:")
-        for entry in raw_output:
-            print(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
-        print("\nFinal Predicted Labels (after applying custom thresholds):")
-        print(final_labels)
-        cont = input("\nWould you like to analyze another text? (y/n): ")
-        if cont.lower() != "y":
-            break
 
-# Run the interactive prediction loop
-interactive_prediction()
+input=st.text_input("Input Text Here")
+if st.button("Analyze"):
+  final_labels, raw_output = predict_with_custom_thresholds(text, 3)
+  for entry in raw_output:
+        st.write(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
+        st.write("\nFinal Predicted Labels (after applying custom thresholds):")
+        st.write(final_labels)
+    
+
+
+
+# # Interactive loop for predictions
+# def interactive_prediction():
+#     while True:
+#         text = input("Enter your text for sentiment analysis: ")
+#         final_labels, raw_output = predict_with_custom_thresholds(text, custom_thresholds)
+#         st.write("\nRaw Prediction Scores:")
+#         for entry in raw_output:
+#             print(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
+#         print("\nFinal Predicted Labels (after applying custom thresholds):")
+#         st.write(final_labels)
+#         cont = input("\nWould you like to analyze another text? (y/n): ")
+#         if cont.lower() != "y":
+#             break
+
+# # Run the interactive prediction loop
+# interactive_prediction()
