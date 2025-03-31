@@ -56,10 +56,12 @@ def predict_with_custom_thresholds(text, thresholds):
 input=st.text_input("Input Text Here")
 if st.button("Analyze"):
   final_labels, raw_output = predict_with_custom_thresholds(input, 3)
-  for entry in raw_output:
-        st.write(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
-        st.write("\nFinal Predicted Labels (after applying custom thresholds):")
-        st.write(final_labels)
+  st.write(final_labels)
+  st.write(raw_output)
+  # for entry in raw_output:
+  #       st.write(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
+  #       st.write("\nFinal Predicted Labels (after applying custom thresholds):")
+  #       st.write(final_labels)
     
 
 
