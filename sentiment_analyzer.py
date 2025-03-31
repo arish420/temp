@@ -61,7 +61,7 @@ def predict_with_custom_thresholds(text, thresholds):
 
 input=st.text_input("Input Text Here")
 if st.button("Analyze"):
-  final_labels = predict_with_custom_thresholds(input, 3)
+  final_labels = predict_with_custom_thresholds(input, custom_thresholds)
   st.write(final_labels)
   # st.write(raw_output)
   # for entry in raw_output:
