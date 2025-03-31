@@ -33,7 +33,7 @@ pipe = pipeline(
     task="text-classification",
     model="OmarBrookes/my-sentiment-analysis",
     tokenizer=tokenizer,
-    function_to_apply="sigmoid",  # For multi-label, use sigmoid activation
+    function_to_apply="softmax",  # For multi-label, use sigmoid activation
     top_k=None,                   # Return scores for all labels
     device=0                      # Use GPU (device 0) if available
 )
