@@ -1,17 +1,15 @@
-import transformers
-from transformers import pipeline
-import torch
 import streamlit as st
-# Load model directly
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+from transformers import RobertaTokenizer, RobertaForSequenceClassification
+MODEL_PATH = "OmarBrookes/my-sentiment-analysis"
+tokenizer = RobertaTokenizer.from_pretrained(MODEL_PATH)
+model = RobertaForSequenceClassification.from_pretrained(MODEL_PATH)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
-st.title("Sentiment Analyzer")
+LABELS = ['neutral', 'positive', 'mixed', 'sarcastic', 'negative', 'ironic']
 
-# Define your label names (in the correct order)
-label_names = ["neutral", "positive", "mixed", "sarcastic", "negative", "ironic"]
-
-# Define your custom thresholds for each label
 custom_thresholds = {
     'neutral': 0.39,
     'positive': 0.509,
@@ -21,70 +19,37 @@ custom_thresholds = {
     'ironic': 0.16
 }
 
-tokenizer = AutoTokenizer.from_pretrained("OmarBrookes/my-sentiment-analysis")
-model = AutoModelForSequenceClassification.from_pretrained("OmarBrookes/my-sentiment-analysis")
+if "review_count" not in st.session_state:
+    st.session_state.review_count = 1 
 
-# Update your model config so that labels are human-readable.
-model.config.id2label = {i: label for i, label in enumerate(label_names)}
-model.config.label2id = {label: i for i, label in enumerate(label_names)}
+st.title("Sentiment Analysis")
+st.write("Enter a text and get sentiment predictions.")
 
-# Create the pipeline. Using "sigmoid" with top_k=None returns probabilities for all labels.
-pipe = pipeline(
-    task="text-classification",
-    model="OmarBrookes/my-sentiment-analysis",
-    tokenizer=tokenizer,
-    function_to_apply="softmax",  # For multi-label, use sigmoid activation
-    top_k=None,                   # Return scores for all labels
-    device=0                      # Use GPU (device 0) if available
-)
+user_input = st.text_area("Enter your text here:")
+expected_output = st.text_input("Expected Sentiments (comma-separated, optional):")
 
-# Prediction function with custom thresholds.
-def predict_with_custom_thresholds(text, thresholds):
-    # Get raw output from the pipeline.
-    output = pipe(text)
-    # Check if output is a nested list; if so, flatten it.
-    if isinstance(output[0], list):
-        flat_output = [item for sublist in output for item in sublist]
-    else:
-        flat_output = output
+if st.button("Analyze Sentiment") and user_input:
+    inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True)
+    inputs = {key: val.to(device) for key, val in inputs.items()}
 
-    # for i in range(len(flat_output):
-        
+    model.eval()
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.sigmoid(outputs.logits).cpu().numpy()[0]  # Convert logits to probabilities
 
+    prob_dict = {label: prob for label, prob in zip(LABELS, probs)}
 
-    # st.write(flat_output[0])
+    final_labels = [label for label in LABELS if prob_dict[label] >= custom_thresholds[label]]
+    expected_labels = [label.strip() for label in expected_output.split(",")] if expected_output else ["N/A"]
+    st.write(f"### 🔹 Review #{st.session_state.review_count}")
+    st.write(f"📝 *Text:* {user_input}")
 
-    # Apply custom thresholds: only keep labels where score meets/exceeds the threshold.
-    final_labels = [entry['label'] for entry in flat_output if entry['score'] >= thresholds[entry['label']]]
-    return  final_labels,flat_output
-# final_labels,
+    st.write(f"🎯 *Expected:* {expected_labels}")
+    st.write(f"✅ *Predicted:* {final_labels}")
+    st.write("📊 *Probabilities:*")
+    for label, prob in prob_dict.items():
+        st.write(f"🔹 {label}: {prob:.4f}")
 
-input=st.text_input("Input Text Here")
-if st.button("Analyze"):
-  final_labels, raw_output = predict_with_custom_thresholds(input, custom_thresholds)
-  st.write(final_labels)
-  st.write(raw_output)
-  for entry in raw_output:
-        st.write(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
-        st.write("\nFinal Predicted Labels (after applying custom thresholds):")
-        st.write(final_labels)
-    
-# raw_output
+    st.session_state.review_count += 1
 
-
-# # Interactive loop for predictions
-# def interactive_prediction():
-#     while True:
-#         text = input("Enter your text for sentiment analysis: ")
-#         final_labels, raw_output = predict_with_custom_thresholds(text, custom_thresholds)
-#         st.write("\nRaw Prediction Scores:")
-#         for entry in raw_output:
-#             print(f"Label: {entry['label']}, Score: {entry['score']:.4f}")
-#         print("\nFinal Predicted Labels (after applying custom thresholds):")
-#         st.write(final_labels)
-#         cont = input("\nWould you like to analyze another text? (y/n): ")
-#         if cont.lower() != "y":
-#             break
-
-# # Run the interactive prediction loop
-# interactive_prediction()
+    st.write("---")
